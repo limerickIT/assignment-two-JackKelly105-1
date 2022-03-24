@@ -1,9 +1,14 @@
-C:\Users\alan.ryan\Dropbox\Course Notes\SD4 Enterprise Development\Semester II\Assignments\2022\AssignmentTwo\Assignment_Two_2022\src\main\java\com\sd4\model\Beer.java
-C:\Users\alan.ryan\Dropbox\Course Notes\SD4 Enterprise Development\Semester II\Assignments\2022\AssignmentTwo\Assignment_Two_2022\src\main\java\com\sd4\model\Breweries_Geocode.java
-C:\Users\alan.ryan\Dropbox\Course Notes\SD4 Enterprise Development\Semester II\Assignments\2022\AssignmentTwo\Assignment_Two_2022\src\main\java\com\sd4\controller\BeerController.java
-C:\Users\alan.ryan\Dropbox\Course Notes\SD4 Enterprise Development\Semester II\Assignments\2022\AssignmentTwo\Assignment_Two_2022\src\main\java\com\sd4\model\Brewery.java
-C:\Users\alan.ryan\Dropbox\Course Notes\SD4 Enterprise Development\Semester II\Assignments\2022\AssignmentTwo\Assignment_Two_2022\src\main\java\com\sd4\application\AssignmentOne2022Application.java
-C:\Users\alan.ryan\Dropbox\Course Notes\SD4 Enterprise Development\Semester II\Assignments\2022\AssignmentTwo\Assignment_Two_2022\src\main\java\com\sd4\model\Style.java
-C:\Users\alan.ryan\Dropbox\Course Notes\SD4 Enterprise Development\Semester II\Assignments\2022\AssignmentTwo\Assignment_Two_2022\src\main\java\com\sd4\application\ServletInitializer.java
-C:\Users\alan.ryan\Dropbox\Course Notes\SD4 Enterprise Development\Semester II\Assignments\2022\AssignmentTwo\Assignment_Two_2022\src\main\java\com\sd4\repository\BeerRepository.java
-C:\Users\alan.ryan\Dropbox\Course Notes\SD4 Enterprise Development\Semester II\Assignments\2022\AssignmentTwo\Assignment_Two_2022\src\main\java\com\sd4\model\Category.java
+C:\Users\Jack Kelly\Desktop\assignment-two-JackKelly105-1\Assignment_Two_2022\src\main\java\Model\Breweries_Geocode.java
+C:\Users\Jack Kelly\Desktop\assignment-two-JackKelly105-1\Assignment_Two_2022\src\main\java\Controller\ApiExceptionHandler.java
+C:\Users\Jack Kelly\Desktop\assignment-two-JackKelly105-1\Assignment_Two_2022\src\main\java\Model\Style.java
+C:\Users\Jack Kelly\Desktop\assignment-two-JackKelly105-1\Assignment_Two_2022\src\main\java\Service\BeerService.java
+C:\Users\Jack Kelly\Desktop\assignment-two-JackKelly105-1\Assignment_Two_2022\src\main\java\com\sd4\application\AssignmentTwo2022Application.java
+C:\Users\Jack Kelly\Desktop\assignment-two-JackKelly105-1\Assignment_Two_2022\src\main\java\Controller\BeerRestController.java
+C:\Users\Jack Kelly\Desktop\assignment-two-JackKelly105-1\Assignment_Two_2022\src\main\java\Exception\BeerNotFound.java
+C:\Users\Jack Kelly\Desktop\assignment-two-JackKelly105-1\Assignment_Two_2022\src\main\java\Model\Category.java
+C:\Users\Jack Kelly\Desktop\assignment-two-JackKelly105-1\Assignment_Two_2022\src\main\java\Controller\ApiRequestException.java
+C:\Users\Jack Kelly\Desktop\assignment-two-JackKelly105-1\Assignment_Two_2022\src\main\java\Repository\BeerRepo.java
+C:\Users\Jack Kelly\Desktop\assignment-two-JackKelly105-1\Assignment_Two_2022\src\main\java\com\sd4\application\ServletInitializer.java
+C:\Users\Jack Kelly\Desktop\assignment-two-JackKelly105-1\Assignment_Two_2022\src\main\java\Controller\ApiException.java
+C:\Users\Jack Kelly\Desktop\assignment-two-JackKelly105-1\Assignment_Two_2022\src\main\java\Model\Beer.java
+C:\Users\Jack Kelly\Desktop\assignment-two-JackKelly105-1\Assignment_Two_2022\src\main\java\Model\Brewery.java

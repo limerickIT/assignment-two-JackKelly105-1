@@ -32,11 +32,11 @@ public class BeerService {
         return beerRepo.count();
     }
 
-    public void deleteByID(long authorID) {
-        beerRepo.deleteById(authorID);
+    public void deleteByID(long beerID) {
+        beerRepo.deleteById(beerID);
     }
 
-    public void saveAuthor(Beer a) {
+    public void saveBeer(Beer a) {
         beerRepo.save(a);
     }  
 }

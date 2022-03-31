@@ -73,7 +73,7 @@ import org.springframework.http.HttpHeaders;
 
 /**
  *
- * @author Jack Kelly http://localhost:8888/explorer/index.html#
+ * @author Jack Kelly
  */
 @RestController
 @RequestMapping("/beer")
@@ -120,7 +120,106 @@ public class BeerRestController {
                     linkTo(methodOn(BeerRestController.class).one(id)).withSelfRel(),
                     linkTo(methodOn(BeerRestController.class).getAll()).withRel("http://localhost:8888/beer/allbeers"));
         } catch (Exception e) {
-            throw new ApiRequestException("Oops cannot find selected property");
+            throw new ApiRequestException("Oops cannot find selected beer");
         }
     }
+
+    @Operation(summary = "Get all beers (HATEOAS)")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Found beers",
+                content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Beer.class))}),
+        @ApiResponse(responseCode = "400", description = "Invalid",
+                content = @Content),
+        @ApiResponse(responseCode = "404", description = "Beers not found",
+                content = @Content)})
+    @GetMapping("/allbeers")
+    CollectionModel<EntityModel<Beer>> all() {
+        try {
+            List<EntityModel<Beer>> b = beerService.findAll().stream()
+                    .map(B -> EntityModel.of(B,
+                    linkTo(methodOn(BeerRestController.class).one(B.getId())).withSelfRel(),
+                    linkTo(methodOn(BeerRestController.class).all()).withRel("http://localhost:8888/beer/details/" + B.getId())))
+                    .collect(Collectors.toList());
+
+            return CollectionModel.of(b, linkTo(methodOn(BeerRestController.class).all()).withSelfRel());
+        } catch (Exception e) {
+            throw new ApiRequestException("Oops cannot find all beers");
+        }
+    }
+
+    @Operation(summary = "Returns total number of beer")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Found total beers",
+                content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Beer.class))}),
+        @ApiResponse(responseCode = "400", description = "Invalid",
+                content = @Content),
+        @ApiResponse(responseCode = "404", description = "Beers not found",
+                content = @Content)})
+    @GetMapping("/count")
+    public long getCount() {
+        return beerService.count();
+    }
+
+    @Operation(summary = "Deletes selected beer")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Deleted",
+                content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Beer.class))}),
+        @ApiResponse(responseCode = "400", description = "Invalid",
+                content = @Content),
+        @ApiResponse(responseCode = "404", description = "Beer not found",
+                content = @Content)})
+    @DeleteMapping("/{id}")
+    public ResponseEntity delete(@PathVariable long id) {
+        try {
+            beerService.deleteByID(id);
+            return new ResponseEntity(HttpStatus.OK);
+        } catch (Exception e) {
+            throw new ApiRequestException("Beer never existed, invalid URL");
+        }
+    }
+
+    @Operation(summary = "Add a new beer")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Beer added",
+                content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Beer.class))}),
+        @ApiResponse(responseCode = "400", description = "Invalid input",
+                content = @Content),})
+    @PostMapping("")
+    public ResponseEntity add(@RequestBody Beer a) {
+        try {
+            beerService.saveBeer(a);
+            return new ResponseEntity(HttpStatus.CREATED);
+        } catch (Exception e) {
+            throw new ApiRequestException("Add Failure, input may be incorrect");
+        }
+    }
+
+    @Operation(summary = "Edit selected beer")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Beer has been Edited",
+                content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Beer.class))}),
+        @ApiResponse(responseCode = "400", description = "Invalid input",
+                content = @Content),
+        @ApiResponse(responseCode = "404", description = "Beer not found",
+                content = @Content)})
+    @PutMapping("")
+    public ResponseEntity edit(@RequestBody Beer a) {
+        try {
+            beerService.saveBeer(a);
+            return new ResponseEntity(HttpStatus.OK);
+        } catch (Exception e) {
+            throw new ApiRequestException("Edit failure, potential incorrect input");
+        }
+    }
+
 }

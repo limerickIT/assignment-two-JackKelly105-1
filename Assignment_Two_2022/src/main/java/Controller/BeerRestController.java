@@ -5,9 +5,12 @@
 package Controller;
 
 import Model.Beer;
+import Model.Brewery;
 
 import Repository.BeerRepo;
+import Repository.BreweryRepo;
 import Service.BeerService;
+import Service.BreweryService;
 
 import java.util.List;
 
@@ -84,6 +87,12 @@ public class BeerRestController {
 
     @Autowired
     private BeerRepo beerRepo;
+    
+    @Autowired
+    private BreweryRepo breweryRepo;
+
+    @Autowired
+    private BreweryService breweryService;
 
     @Operation(summary = "Get all beers")
     @ApiResponses(value = {
@@ -124,6 +133,31 @@ public class BeerRestController {
         }
     }
 
+    @Operation(summary = "will display the beer name, beer description, and brewery.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Found beer",
+                content = {
+                    @Content(mediaType = "string",
+                            schema = @Schema(implementation = Beer.class))}),
+        @ApiResponse(responseCode = "400", description = "Invalid",
+                content = @Content),
+        @ApiResponse(responseCode = "404", description = "Beer not found",
+                content = @Content)})
+    @GetMapping("details/{id}")
+    public String getOneDetail(@PathVariable long id) {
+        try {
+            Beer b = beerService.findOne(id);
+
+            long x = (long) b.getBrewery_id();
+            Brewery a = breweryService.findOne(x);
+
+            String r = "Name = " + b.getName() + " Description = " + b.getDescription() + " Brewery = " + a.getName();
+            return r;
+        } catch (Exception e) {
+            throw new ApiRequestException("Oops caannot find selected beer");
+        }
+    }
+
     @Operation(summary = "Get all beers (HATEOAS)")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Found beers",
@@ -144,6 +178,55 @@ public class BeerRestController {
                     .collect(Collectors.toList());
 
             return CollectionModel.of(b, linkTo(methodOn(BeerRestController.class).all()).withSelfRel());
+        } catch (Exception e) {
+            throw new ApiRequestException("Oops cannot find all beers");
+        }
+    }
+
+    @Operation(summary = "Get a Brewerys by its id (HATEOAS)")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Found the Brewerys",
+                content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Beer.class))}),
+        @ApiResponse(responseCode = "400", description = "Invalid id supplied",
+                content = @Content),
+        @ApiResponse(responseCode = "404", description = "Brewerys not found",
+                content = @Content)})
+    @GetMapping("/brewerys/{id}")
+    EntityModel<Optional<Brewery>> oneBrewerys(@PathVariable Long id) {
+
+        Optional<Brewery> b = breweryRepo.findById(id);
+
+        try {
+            return EntityModel.of(b, //
+                    linkTo(methodOn(BeerRestController.class).one(id)).withSelfRel(),
+                    linkTo(methodOn(BeerRestController.class).getAll()).withRel("http://localhost:8888/brewerys/allbrewerys"));
+        } catch (Exception e) {
+            throw new ApiRequestException("Oops cannot find selected brewerys");
+        }
+    }
+
+    @Operation(summary = "Get all Brewerys (HATEOAS)")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Found Brewerys",
+                content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Beer.class))}),
+        @ApiResponse(responseCode = "400", description = "Invalid",
+                content = @Content),
+        @ApiResponse(responseCode = "404", description = "Brewerys not found",
+                content = @Content)})
+    @GetMapping("/allBrewerys")
+    CollectionModel<EntityModel<Brewery>> allBrewery() {
+        try {
+            List<EntityModel<Brewery>> b = breweryService.findAll().stream()
+                    .map(B -> EntityModel.of(B,
+                    linkTo(methodOn(BeerRestController.class).oneBrewerys(B.getId())).withSelfRel(),
+                    linkTo(methodOn(BeerRestController.class).allBrewery()).withRel("http://localhost:8888/brewery/details/" + B.getId())))
+                    .collect(Collectors.toList());
+
+            return CollectionModel.of(b, linkTo(methodOn(BeerRestController.class).allBrewery()).withSelfRel());
         } catch (Exception e) {
             throw new ApiRequestException("Oops cannot find all beers");
         }
@@ -219,6 +302,26 @@ public class BeerRestController {
             return new ResponseEntity(HttpStatus.OK);
         } catch (Exception e) {
             throw new ApiRequestException("Edit failure, potential incorrect input");
+        }
+    }
+
+    @Operation(summary = "Get a beer by its id (XML FORMAT)")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Found the beer",
+                content = {
+                    @Content(mediaType = "application/xml",
+                            schema = @Schema(implementation = Beer.class))}),
+        @ApiResponse(responseCode = "400", description = "Invalid id supplied",
+                content = @Content),
+        @ApiResponse(responseCode = "404", description = "Beer not found",
+                content = @Content)})
+    @GetMapping("xml/{id}")
+    @Produces(MediaType.APPLICATION_XML_VALUE)
+    public Beer getoneXMLList(@PathVariable long id) {
+        try {
+            return beerService.findOne(id);
+        } catch (Exception e) {
+            throw new ApiRequestException("Oops cannot find selected beer");
         }
     }
 

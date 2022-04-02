@@ -10,7 +10,9 @@ import Model.Brewery;
 import Repository.BeerRepo;
 import Repository.BreweryRepo;
 import Service.BeerService;
+
 import Service.BreweryService;
+import com.google.zxing.WriterException;
 
 import java.util.List;
 
@@ -75,6 +77,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 import org.springframework.http.HttpHeaders;
 
 /**
+ * http://localhost:8888/swagger-ui/index.html?configUrl=/v3/api-docs/swagger-config#/
  *
  * @author Jack Kelly
  */
@@ -87,7 +90,7 @@ public class BeerRestController {
 
     @Autowired
     private BeerRepo beerRepo;
-    
+
     @Autowired
     private BreweryRepo breweryRepo;
 
@@ -127,7 +130,7 @@ public class BeerRestController {
         try {
             return EntityModel.of(b, //
                     linkTo(methodOn(BeerRestController.class).one(id)).withSelfRel(),
-                    linkTo(methodOn(BeerRestController.class).getAll()).withRel("http://localhost:8888/beer/allbeers"));
+                    linkTo(methodOn(BeerRestController.class).getAll()).withRel("http://localhost:8888/allbeers"));
         } catch (Exception e) {
             throw new ApiRequestException("Oops cannot find selected beer");
         }
@@ -168,7 +171,7 @@ public class BeerRestController {
                 content = @Content),
         @ApiResponse(responseCode = "404", description = "Beers not found",
                 content = @Content)})
-    @GetMapping("/allbeers")
+    @GetMapping("allbeers")
     CollectionModel<EntityModel<Beer>> all() {
         try {
             List<EntityModel<Beer>> b = beerService.findAll().stream()
@@ -188,12 +191,12 @@ public class BeerRestController {
         @ApiResponse(responseCode = "200", description = "Found the Brewerys",
                 content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Beer.class))}),
+                            schema = @Schema(implementation = Brewery.class))}),
         @ApiResponse(responseCode = "400", description = "Invalid id supplied",
                 content = @Content),
         @ApiResponse(responseCode = "404", description = "Brewerys not found",
                 content = @Content)})
-    @GetMapping("/brewerys/{id}")
+    @GetMapping("/Brewerys/{id}")
     EntityModel<Optional<Brewery>> oneBrewerys(@PathVariable Long id) {
 
         Optional<Brewery> b = breweryRepo.findById(id);
@@ -212,12 +215,12 @@ public class BeerRestController {
         @ApiResponse(responseCode = "200", description = "Found Brewerys",
                 content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Beer.class))}),
+                            schema = @Schema(implementation = Brewery.class))}),
         @ApiResponse(responseCode = "400", description = "Invalid",
                 content = @Content),
         @ApiResponse(responseCode = "404", description = "Brewerys not found",
                 content = @Content)})
-    @GetMapping("/allBrewerys")
+    @GetMapping("allBrewerys")
     CollectionModel<EntityModel<Brewery>> allBrewery() {
         try {
             List<EntityModel<Brewery>> b = breweryService.findAll().stream()
@@ -242,67 +245,9 @@ public class BeerRestController {
                 content = @Content),
         @ApiResponse(responseCode = "404", description = "Beers not found",
                 content = @Content)})
-    @GetMapping("/count")
+    @GetMapping("count")
     public long getCount() {
         return beerService.count();
-    }
-
-    @Operation(summary = "Deletes selected beer")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Deleted",
-                content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Beer.class))}),
-        @ApiResponse(responseCode = "400", description = "Invalid",
-                content = @Content),
-        @ApiResponse(responseCode = "404", description = "Beer not found",
-                content = @Content)})
-    @DeleteMapping("/{id}")
-    public ResponseEntity delete(@PathVariable long id) {
-        try {
-            beerService.deleteByID(id);
-            return new ResponseEntity(HttpStatus.OK);
-        } catch (Exception e) {
-            throw new ApiRequestException("Beer never existed, invalid URL");
-        }
-    }
-
-    @Operation(summary = "Add a new beer")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Beer added",
-                content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Beer.class))}),
-        @ApiResponse(responseCode = "400", description = "Invalid input",
-                content = @Content),})
-    @PostMapping("")
-    public ResponseEntity add(@RequestBody Beer a) {
-        try {
-            beerService.saveBeer(a);
-            return new ResponseEntity(HttpStatus.CREATED);
-        } catch (Exception e) {
-            throw new ApiRequestException("Add Failure, input may be incorrect");
-        }
-    }
-
-    @Operation(summary = "Edit selected beer")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Beer has been Edited",
-                content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Beer.class))}),
-        @ApiResponse(responseCode = "400", description = "Invalid input",
-                content = @Content),
-        @ApiResponse(responseCode = "404", description = "Beer not found",
-                content = @Content)})
-    @PutMapping("")
-    public ResponseEntity edit(@RequestBody Beer a) {
-        try {
-            beerService.saveBeer(a);
-            return new ResponseEntity(HttpStatus.OK);
-        } catch (Exception e) {
-            throw new ApiRequestException("Edit failure, potential incorrect input");
-        }
     }
 
     @Operation(summary = "Get a beer by its id (XML FORMAT)")
@@ -325,4 +270,79 @@ public class BeerRestController {
         }
     }
 
+    @Operation(summary = "Get Image for a given beer")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Found the beer",
+                content = {
+                    @Content(mediaType = "application/jpeg",
+                            schema = @Schema(implementation = Beer.class))}),
+        @ApiResponse(responseCode = "400", description = "Invalid id supplied",
+                content = @Content),
+        @ApiResponse(responseCode = "404", description = "Beer not found",
+                content = @Content)})
+    @GetMapping(
+            value = "getbeer/{id}",
+            produces = MediaType.IMAGE_JPEG_VALUE
+    )
+    public @ResponseBody
+    byte[] getImageWithMediaType(@PathVariable long id) throws IOException {
+        try {
+            Beer a = beerService.findOne(id);
+            InputStream in = getClass()
+                    .getResourceAsStream("/static/assets/images/thumbs/" + a.getId() + ".jpg");
+            return IOUtils.toByteArray(in);
+        } catch (Exception e) {
+            throw new ApiRequestException("No beer found");
+        }
+    }
+
+    @Operation(summary = "Returns zipped file of images related to beer")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Found the beer",
+                content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Beer.class))}),
+        @ApiResponse(responseCode = "400", description = "Invalid id supplied",
+                content = @Content),
+        @ApiResponse(responseCode = "404", description = "beer not found",
+                content = @Content)})
+    @RequestMapping(value = "/zip/{id}", produces = "application/zip")
+    public byte[] zipFiles(HttpServletResponse response, @PathVariable Long id) throws IOException {
+
+        Beer beer = beerService.findOne(id);
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.addHeader("Content-Disposition", "attachment; filename=\"images.zip\"");
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
+        ZipOutputStream zipOutputStream = new ZipOutputStream(bufferedOutputStream);
+
+        ArrayList<File> files = new ArrayList<>();
+        files.add(new File("src/main/resources/static/assets/images/large/" + beer.getId() + ".jpg"));
+        files.add(new File("src/main/resources/static/images/properties/large/" + beer.getId() + ".jpg"));
+        files.add(new File("src/main/resources/static/images/properties/large/" + beer.getId() + ".jpg"));
+        files.add(new File("src/main/resources/static/images/properties/large/" + beer.getId() + ".jpg"));
+        files.add(new File("src/main/resources/static/images/properties/large/" + beer.getId() + "noimage.jpg"));
+        files.add(new File("src/main/resources/static/images/properties/large/" + beer.getId() + "/" + beer.getImage()));
+
+        for (File file : files) {
+
+            zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
+            FileInputStream fileInputStream = new FileInputStream(file);
+
+            IOUtils.copy(fileInputStream, zipOutputStream);
+
+            fileInputStream.close();
+            zipOutputStream.closeEntry();
+        }
+
+        if (zipOutputStream != null) {
+            zipOutputStream.finish();
+            zipOutputStream.flush();
+            IOUtils.closeQuietly(zipOutputStream);
+        }
+        IOUtils.closeQuietly(bufferedOutputStream);
+        IOUtils.closeQuietly(byteArrayOutputStream);
+        return byteArrayOutputStream.toByteArray();
+    }
 }

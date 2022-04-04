@@ -6,16 +6,18 @@ package Controller;
 
 import Model.Beer;
 import Model.Brewery;
-
+import Model.Category;
+import Model.Style;
 import Repository.BeerRepo;
+import Repository.CategoryRepo;
+import Repository.StyleRepo;
 import Repository.BreweryRepo;
 import Service.BeerService;
-
+import Service.CategoryService;
+import Service.StyleService;
 import Service.BreweryService;
 import com.google.zxing.WriterException;
-
 import java.util.List;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -33,7 +35,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -78,6 +82,7 @@ import org.springframework.http.HttpHeaders;
 
 /**
  * http://localhost:8888/swagger-ui/index.html?configUrl=/v3/api-docs/swagger-config#/
+ * http://localhost:8888/explorer/index.html#uri=/
  *
  * @author Jack Kelly
  */
@@ -96,6 +101,18 @@ public class BeerRestController {
 
     @Autowired
     private BreweryService breweryService;
+
+    @Autowired
+    private CategoryService categoryService;
+
+    @Autowired
+    private CategoryRepo categoryRepo;
+
+    @Autowired
+    private StyleService styleService;
+
+    @Autowired
+    private StyleRepo styleRepo;
 
     @Operation(summary = "Get all beers")
     @ApiResponses(value = {
@@ -270,7 +287,7 @@ public class BeerRestController {
         }
     }
 
-    @Operation(summary = "Get Image for a given beer")
+    @Operation(summary = "Get Image for a given beer thumbs")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Found the beer",
                 content = {
@@ -281,21 +298,57 @@ public class BeerRestController {
         @ApiResponse(responseCode = "404", description = "Beer not found",
                 content = @Content)})
     @GetMapping(
-            value = "getbeer/{id}",
+            value = "getbeerthumbs/{id}",
             produces = MediaType.IMAGE_JPEG_VALUE
     )
     public @ResponseBody
     byte[] getImageWithMediaType(@PathVariable long id) throws IOException {
         try {
             Beer a = beerService.findOne(id);
+            String value = "";  
+            if(id <=4)
+                value = ("/static/assets/images/thumbs/" + a.getId() + ".jpg");
+            else
+                value = ("/static/assets/images/thumbs/noimage.jpg");
             InputStream in = getClass()
-                    .getResourceAsStream("/static/assets/images/thumbs/" + a.getId() + ".jpg");
+                    .getResourceAsStream(value);
             return IOUtils.toByteArray(in);
         } catch (Exception e) {
             throw new ApiRequestException("No beer found");
         }
     }
 
+    @Operation(summary = "Get Image for a given beer large")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Found the beer",
+                content = {
+                    @Content(mediaType = "application/jpeg",
+                            schema = @Schema(implementation = Beer.class))}),
+        @ApiResponse(responseCode = "400", description = "Invalid id supplied",
+                content = @Content),
+        @ApiResponse(responseCode = "404", description = "Beer not found",
+                content = @Content)})
+    @GetMapping(
+            value = "getbeerlarge/{id}",
+            produces = MediaType.IMAGE_JPEG_VALUE
+    )
+    public @ResponseBody
+    byte[] getImageWithMediaTypelarge(@PathVariable long id) throws IOException {
+        try {
+            Beer a = beerService.findOne(id);
+            String value = "";  
+            if(id <=4)
+                value = ("/static/assets/images/large/" + a.getId() + ".jpg");
+           else
+                value = ("/static/assets/images/large/noimage.jpg");
+             InputStream in = getClass()
+                    .getResourceAsStream(value);
+            return IOUtils.toByteArray(in);
+        } catch (Exception e) {
+            throw new ApiRequestException("No beer found");
+        }
+    }
+   //Zip by ID
     @Operation(summary = "Returns zipped file of images related to beer")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Found the beer",
@@ -318,12 +371,11 @@ public class BeerRestController {
         ZipOutputStream zipOutputStream = new ZipOutputStream(bufferedOutputStream);
 
         ArrayList<File> files = new ArrayList<>();
-        files.add(new File("src/main/resources/static/assets/images/large/" + beer.getId() + ".jpg"));
-        files.add(new File("src/main/resources/static/images/properties/large/" + beer.getId() + ".jpg"));
-        files.add(new File("src/main/resources/static/images/properties/large/" + beer.getId() + ".jpg"));
-        files.add(new File("src/main/resources/static/images/properties/large/" + beer.getId() + ".jpg"));
-        files.add(new File("src/main/resources/static/images/properties/large/" + beer.getId() + "noimage.jpg"));
-        files.add(new File("src/main/resources/static/images/properties/large/" + beer.getId() + "/" + beer.getImage()));
+        if(id <=4)
+        files.add(new File("src/main/resources/static/assets/images/large/" +beer.getId() + ".jpg"));
+        else
+        files.add(new File("src/main/resources/static/assets/images/large/noimage.jpg"));
+        
 
         for (File file : files) {
 
@@ -345,4 +397,135 @@ public class BeerRestController {
         IOUtils.closeQuietly(byteArrayOutputStream);
         return byteArrayOutputStream.toByteArray();
     }
+    
+    //Zip all beers
+    @Operation(summary = "Returns zipped file of all images")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Found the beer",
+                content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Beer.class))}),
+        @ApiResponse(responseCode = "400", description = "Invalid",
+                content = @Content),
+        @ApiResponse(responseCode = "404", description = "zip not found",
+                content = @Content)})
+    @RequestMapping(value = "zip", produces = "application/zip")
+    public byte[] zipFilestwo(HttpServletResponse response) throws IOException {
+
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.addHeader("Content-Disposition", "attachment; filename=\"images.zip\"");
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
+        ZipOutputStream zipOutputStream = new ZipOutputStream(bufferedOutputStream);
+
+        ArrayList<File> files = new ArrayList<>();
+        files.add(new File("src/main/resources/static/assets/images/large/1.jpg"));
+        files.add(new File("src/main/resources/static/assets/images/large/2.jpg"));
+        files.add(new File("src/main/resources/static/assets/images/large/3.jpg"));
+        files.add(new File("src/main/resources/static/assets/images/large/4.jpg"));
+        files.add(new File("src/main/resources/static/assets/images/large/noimage.jpg"));
+        
+        for (File file : files) {
+
+            zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
+            FileInputStream fileInputStream = new FileInputStream(file);
+
+            IOUtils.copy(fileInputStream, zipOutputStream);
+
+            fileInputStream.close();
+            zipOutputStream.closeEntry();
+        }
+
+        if (zipOutputStream != null) {
+            zipOutputStream.finish();
+            zipOutputStream.flush();
+            IOUtils.closeQuietly(zipOutputStream);
+        }
+        IOUtils.closeQuietly(bufferedOutputStream);
+        IOUtils.closeQuietly(byteArrayOutputStream);
+        return byteArrayOutputStream.toByteArray();
+    }
+    
+    
+    @Operation(summary = "Returns beer Brochure in PDF format")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Found the beer",
+                content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Beer.class))}),
+        @ApiResponse(responseCode = "400", description = "Invalid id supplied",
+                content = @Content),
+        @ApiResponse(responseCode = "404", description = "beer not found",
+                content = @Content)})
+    @GetMapping(value = "/pdf/{id}",
+            produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity customersReport(@PathVariable Long id) throws IOException {
+        try {
+            Beer beer = beerService.findOne(id);
+            Brewery a = breweryService.findOne(id);
+//            Category c = categoryService.findOne(id);
+//            Style b = styleService.findOne(id);
+            ByteArrayInputStream bis = PDFGenerator.customerPDFReport(beer, a);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Disposition", "inline; filename=beer.pdf");
+
+            return ResponseEntity
+                    .ok()
+                    .headers(headers)
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(new InputStreamResource(bis));
+        } catch (Exception e) {
+            throw new ApiRequestException("Inalid input, no beer found");
+        }
+    }
+
+    @Operation(summary = "Returns QR Code")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "QR CODE",
+                content = {
+                    @Content(mediaType = "application/png",
+                            schema = @Schema(implementation = Brewery.class))}),
+        @ApiResponse(responseCode = "400", description = "Invalid id supplied",
+                content = @Content),
+        @ApiResponse(responseCode = "404", description = "beer not found",
+                content = @Content)})
+    @PostMapping(value = "/zxing/qrcode/{id}", produces = MediaType.IMAGE_PNG_VALUE)
+    public ResponseEntity<BufferedImage> zxingQRCode(@PathVariable long id) throws Exception {
+        try {
+            Brewery brewery = new Brewery();
+            brewery = breweryService.findOne(id);
+            long l = brewery.getId();
+            Brewery barcode = new Brewery();
+            barcode = breweryService.findOne(l);
+
+            return successResponse(QRCode.generatedQRCode(barcode));
+        } catch (Exception e) {
+            throw new ApiRequestException("QR Generation failure, check parameters");
+        }
+    }
+
+    private ResponseEntity<BufferedImage> successResponse(BufferedImage image) {
+        return new ResponseEntity<>(image, HttpStatus.OK);
+    }
+
+    @Bean
+    public HttpMessageConverter<BufferedImage> createImageHttpMessageConverter() {
+        return new BufferedImageHttpMessageConverter();
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public Map<String, String> handleValidationExceptions(
+            MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getAllErrors().forEach((error) -> {
+            String fieldName = ((FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            errors.put(fieldName, errorMessage);
+        });
+        return errors;
+    }
+
 }
